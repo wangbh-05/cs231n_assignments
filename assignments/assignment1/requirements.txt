@@ -1,4 +1,4 @@
-3# Minimal local requirements for assignment1
+# Minimal local requirements for assignment1
 numpy>=1.21
 scipy>=1.7
 matplotlib>=3.4
