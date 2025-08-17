@@ -1,0 +1,11 @@
+3# Minimal local requirements for assignment1
+numpy>=1.21
+scipy>=1.7
+matplotlib>=3.4
+jupyter>=1.0
+notebook>=6.0
+nbconvert>=7.0
+PyPDF2>=3.0 # optional, for merging PDFs
+imageio>=2.9
+future>=0.18
+six>=1.15

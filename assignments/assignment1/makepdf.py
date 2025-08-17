@@ -12,18 +12,34 @@ except ImportError:
 
 
 def main(files, pdf_name):
-    os_args = [
-        "jupyter",
-        "nbconvert",
-        "--log-level",
-        "CRITICAL",
-        "--to",
-        "pdf",
-    ]
+    # Try classic LaTeX-based PDF export; on Windows without LaTeX fallback to webpdf
+    to_format_candidates = ["pdf", "webpdf"]
+
+    def export_one(f, to_format):
+        args = [
+            "jupyter",
+            "nbconvert",
+            "--log-level",
+            "CRITICAL",
+            "--to",
+            to_format,
+            f,
+        ]
+        # For webpdf, nbconvert needs pyppeteer or playwright; we try without extra args
+        subprocess.run(args, check=True)
+        print("Created PDF {} (via {}).".format(f, to_format))
+
     for f in files:
-        os_args.append(f)
-        subprocess.run(os_args)
-        print("Created PDF {}.".format(f))
+        last_exc = None
+        for to_format in to_format_candidates:
+            try:
+                export_one(f, to_format)
+                last_exc = None
+                break
+            except Exception as e:
+                last_exc = e
+        if last_exc is not None:
+            raise last_exc
     if MERGE:
         pdfs = [f.split(".")[0] + ".pdf" for f in files]
         merger = PdfMerger()
