@@ -34,7 +34,37 @@ def softmax_loss_naive(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    sample_num=X.shape[0]
+    class_num=W.shape[1]
+    
+    # compute scores matrix
+    scores = np.zeros((sample_num, class_num))
+    for i in range(sample_num):
+      for j in range(class_num):
+        scores[i, j] = np.dot(X[i], W[:, j])
+
+    # compute softmax
+    scores_softmax=scores.copy()
+    for i in range(sample_num):
+      scores_softmax[i] -= np.max(scores_softmax[i]) # stablize the numerical value
+      exp_scores = np.exp(scores_softmax[i])
+      softmax = exp_scores / np.sum(exp_scores)
+      scores_softmax[i] = softmax
+    
+    # compute the loss
+    for i in range(sample_num):
+      log_prob = np.log(scores_softmax[i][y[i]])
+      loss += -log_prob
+    loss /= sample_num
+    loss += 0.5*reg*np.sum(W*W)
+    
+    # compute the gradient
+    for i in range(sample_num):
+      for j in range(class_num):
+        indicator = 1 if y[i] == j else 0
+        dW[:, j] += (scores_softmax[i, j] - indicator) * X[i]
+    dW /= sample_num
+    dW += reg * W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -59,7 +89,26 @@ def softmax_loss_vectorized(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    sample_num=X.shape[0]
+    class_num=W.shape[1]
+
+    # compute scores matrix
+    scores = np.dot(X, W)
+    scores -= np.max(scores, axis=1, keepdims=True)  # stabilize the numerical values
+    exp_scores = np.exp(scores)
+    scores_softmax= exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
+
+    # compute the loss
+    # epsilon=1e-12
+    log_prob = -np.log(scores_softmax[np.arange(sample_num), y])
+    loss = np.mean(log_prob) + 0.5 * reg * np.sum(W * W)
+
+    # compute the gradient
+    dW = scores_softmax.copy()
+    dW[np.arange(sample_num), y] -= 1
+    dW = np.dot(X.T, dW)
+    dW /= sample_num
+    dW += reg * W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
