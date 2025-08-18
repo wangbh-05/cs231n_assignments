@@ -31,12 +31,16 @@ def svm_loss_naive(W, X, y, reg):
     for i in range(num_train):
         scores = X[i].dot(W)
         correct_class_score = scores[y[i]]
+        grad_count=0
         for j in range(num_classes):
             if j == y[i]:
                 continue
-            margin = scores[j] - correct_class_score + 1  # note delta = 1
+            margin = scores[j] - correct_class_score + 1.0  # note delta = 1
             if margin > 0:
                 loss += margin
+                dW[:, j] += X[i]
+                grad_count += 1
+        dW[:, y[i]] += -grad_count * X[i]
 
     # Right now the loss is a sum over all training examples, but we want it
     # to be an average instead so we divide by num_train.
@@ -55,7 +59,10 @@ def svm_loss_naive(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    # DONE
+    # claculating the dW is already modify code above
+    dW /= num_train
+    dW += 2 * reg * W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -78,7 +85,16 @@ def svm_loss_vectorized(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    num_classes = W.shape[1]
+    num_train = X.shape[0]
+    loss = 0.0
+    scores = np.dot(X,W)
+
+    correct_class_scores = scores[np.arange(num_train), y].reshape(-1, 1)
+    margins = np.maximum(0, scores - correct_class_scores + 1.0)
+    margins[np.arange(num_train), y] = 0
+    loss = np.sum(margins) / num_train
+    loss += reg * np.sum(W * W)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -93,7 +109,13 @@ def svm_loss_vectorized(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    # Compute the gradient using the margins computed earlier
+    binary = (margins > 0).astype(float)
+    binary_sum = np.sum(binary, axis=1)
+    binary[np.arange(num_train), y] = -binary_sum
+    dW = np.dot(X.T, binary)
+    dW /= num_train
+    dW += 2 * reg * W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
