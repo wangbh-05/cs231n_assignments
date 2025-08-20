@@ -28,7 +28,8 @@ def affine_forward(x, w, b):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x_reshaped = x.reshape(x.shape[0], -1)
+    out = x_reshaped.dot(w) + b
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -61,7 +62,9 @@ def affine_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    dx=dout.dot(w.T).reshape(x.shape)
+    dw=x.reshape(x.shape[0], -1).T.dot(dout)
+    db=np.sum(dout, axis=0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -87,7 +90,7 @@ def relu_forward(x):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    out=np.maximum(0, x)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -114,7 +117,7 @@ def relu_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    dx = dout * (x > 0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -772,8 +775,21 @@ def svm_loss(x, y):
     # TODO: Copy over your solution from A1.
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    
+    # calculate the loss
+    N = x.shape[0]
+    correct_scores = x[np.arange(N), y][:, None]
+    margins = x - correct_scores + 1.0
+    margins[np.arange(N), y] = 0.0
+    margins = np.maximum(0.0, margins)
 
-    pass
+    loss = np.sum(margins) / N
+
+    # calculate the gradient
+    binary = (margins > 0).astype(float)   # (N, C)
+    row_sum = np.sum(binary, axis=1)       # (N,)
+    binary[np.arange(N), y] = -row_sum
+    dx = binary / N
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -802,9 +818,21 @@ def softmax_loss(x, y):
     # TODO: Copy over your solution from A1.
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    
+    N = x.shape[0]
+    shifted = x - np.max(x, axis=1, keepdims=True)
+    exp_scores = np.exp(shifted)
+    probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)  # (N, C)
 
-    pass
+    # calculate the loss
+    correct_logprobs = -np.log(probs[np.arange(N), y])
+    loss = np.sum(correct_logprobs) / N
 
+    # calculate the gradient
+    dx = probs.copy()
+    dx[np.arange(N), y] -= 1.0
+    dx /= N
+    
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
