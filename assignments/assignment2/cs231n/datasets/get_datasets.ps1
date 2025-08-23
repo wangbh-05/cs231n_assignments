@@ -1,4 +1,6 @@
-# Windows PowerShell version of get_datasets.sh for assignment2
+# Windows PowerShell version of get_datasets.sh
+# Downloads CIFAR-10 and the small ImageNet val set with .NET WebClient
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -11,6 +13,7 @@ if (-not (Test-Path 'cifar-10-batches-py' -PathType Container)) {
     Invoke-WebRequest -Uri $cifarUrl -OutFile $cifarTgz
 
     Write-Host 'Extracting CIFAR-10 ...'
+    # Use tar bundled with Windows 10+ PowerShell
     tar -xzf $cifarTgz
     Remove-Item $cifarTgz -Force
 
