@@ -231,7 +231,13 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        mean=np.mean(x, axis=0)
+        var=np.var(x, axis=0)
+        x_norm=(x-mean)/np.sqrt(var+eps)
+        out=gamma*x_norm+beta
+        running_mean=momentum*running_mean+(1-momentum)*mean
+        running_var=momentum*running_var+(1-momentum)*var
+        cache=(x, mean, var, eps, x_norm, gamma, beta)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -246,7 +252,8 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        x_norm=(x-running_mean)/np.sqrt(running_var+eps)
+        out=gamma*x_norm+beta
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -287,7 +294,35 @@ def batchnorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, mean, var, eps, x_norm, gamma, beta = cache
+    N, D = x.shape
+
+    dx_norm = dout * gamma  # (N, D)
+
+    std = np.sqrt(var + eps)  # (D,)
+
+    # Backprop: y = (x - mean) / std
+
+    dnum = dx_norm / std
+    dstd = np.sum(dx_norm * -(x - mean) / (std**2), axis=0)  
+
+    dvar = dstd * (0.5 / std)  # var = std^2 - eps, 所以 dvar = dstd * (1/(2*std))
+
+    # Backprop: var = 1/N * sum((x - mean)^2)
+    dsq = dvar * np.ones((N, D)) / N
+    ddiff = 2 * (x - mean) * dsq
+
+    dxi_from_var = ddiff
+    dxi_from_mean = dnum
+
+    dmean_from_var = np.sum(-ddiff, axis=0)
+    dmean_from_num = np.sum(-dnum, axis=0)
+    dmean = dmean_from_var + dmean_from_num
+
+    dx = dxi_from_mean + dxi_from_var + dmean / N  
+
+    dgamma = np.sum(dout * x_norm, axis=0)
+    dbeta = np.sum(dout, axis=0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -321,7 +356,18 @@ def batchnorm_backward_alt(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, mean, var, eps, x_norm, gamma, beta = cache
+    N, D = dout.shape
+
+    # Compute gradients
+    dx_norm = dout * gamma
+    dvar = np.sum(dx_norm * (x - mean) * -0.5 * (var + eps) ** -1.5, axis=0)
+    dmean = np.sum(dx_norm * -1 / np.sqrt(var + eps), axis=0) + dvar * np.mean(-2 * (x - mean), axis=0)
+
+    dx = dx_norm / np.sqrt(var + eps) + dvar * 2 * (x - mean) / N + dmean / N
+
+    dgamma = np.sum(dout * x_norm, axis=0)
+    dbeta = np.sum(dout, axis=0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -366,7 +412,11 @@ def layernorm_forward(x, gamma, beta, ln_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    mean=np.mean(x, axis=1, keepdims=True)
+    var=np.var(x, axis=1, keepdims=True)
+    x_norm=(x-mean)/np.sqrt(var+eps)
+    out=gamma*x_norm+beta
+    cache=(x, mean, var, eps, x_norm, gamma, beta)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -400,7 +450,18 @@ def layernorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, mean, var, eps, x_norm, gamma, beta = cache
+    N, D = dout.shape
+
+    # Compute gradients
+    dx_norm = dout * gamma
+    dvar = np.sum(dx_norm * (x - mean) * -0.5 * (var + eps) ** -1.5, axis=1, keepdims=True)
+    dmean = np.sum(dx_norm * -1 / np.sqrt(var + eps), axis=1, keepdims=True) + dvar * np.mean(-2 * (x - mean), axis=1, keepdims=True)
+
+    dx = dx_norm / np.sqrt(var + eps) + dvar * 2 * (x - mean) / D + dmean / D
+
+    dgamma = np.sum(dout * x_norm, axis=0, keepdims=True)
+    dbeta = np.sum(dout, axis=0, keepdims=True)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
