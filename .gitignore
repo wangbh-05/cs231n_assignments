@@ -17,7 +17,7 @@ dist/
 # Jupyter
 .ipynb_checkpoints/
 
-# Data / datasets (不要把大数据放进仓库)
+# Data / datasets 
 cs231n/datasets/
 datasets/
 
@@ -29,3 +29,18 @@ Thumbs.db
 # Test / tooling caches
 .pytest_cache/
 .mypy_cache/
+
+# C/Cython build artifacts (ignore generated C files and compiled extensions)
+# Cython can generate .c files from .pyx; these and the compiled extensions
+# (.pyd on Windows, .so on *nix) should not be checked into git.
+*.c
+*.cpp
+*.pyd
+*.so
+*.dll
+
+# Cython debug/build dirs
+cython_debug/
+
+# Keep local build folders ignored (redundant if already present elsewhere)
+build/
