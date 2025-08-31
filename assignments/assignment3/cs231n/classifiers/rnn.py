@@ -148,7 +148,27 @@ class CaptioningRNN:
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # forward pass
+        # first affine transform
+        h0,cache_affine=affine_forward(features,W_proj,b_proj)  #(N,H)
+        # second embedding layer
+        word_embeddings,cache_embed=word_embedding_forward(captions_in,W_embed)
+        # use RNN
+        if self.cell_type=='rnn':
+            h,rnn_cache=rnn_forward(word_embeddings,h0,Wx,Wh,b)
+        
+        # affine layer calculate scores
+        scores, cache_temporal_affine = temporal_affine_forward(h, W_vocab, b_vocab)
+        # compute loss
+        loss, dx = temporal_softmax_loss(scores, captions_out, mask)
+
+        # backward pass
+        dh, grads['W_vocab'], grads['b_vocab'] = temporal_affine_backward(dx, cache_temporal_affine)
+        if self.cell_type=='rnn':
+            dword_embeddings, dh0, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(dh, rnn_cache)
+
+        grads['W_embed'] = word_embedding_backward(dword_embeddings, cache_embed)
+        d_features, grads['W_proj'], grads['b_proj'] = affine_backward(dh0, cache_affine)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -216,7 +236,18 @@ class CaptioningRNN:
         ###########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # intial hidden state h0
+        h0,affine_cache=affine_forward(features,W_proj,b_proj)
+        # step loop
+        word=self._start
+        prev_h=h0
+        for t in range(max_length):
+            word_embedding=W_embed[word]
+            next_h,rnn_cache=rnn_step_forward(word_embedding,prev_h,Wx,Wh,b)
+            scores=next_h.dot(W_vocab) + b_vocab
+            captions[:,t]=np.argmax(scores,axis=1)
+            word=captions[:,t]
+            prev_h=next_h
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
