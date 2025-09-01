@@ -38,6 +38,13 @@ class PositionalEncoding(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+        # pos=torch.zeros(max_len, embed_dim//2)
+        # i=torch.zeros(max_len,embed_dim//2)
+        # argument=pos/(10000**(2*i/embed_dim))
+        # sin_argument=torch.sin(argument)
+        # cos_argument=torch.cos(argument)
+        # pe[:, :, 0::2] = sin_argument
+        # pe[:, :, 1::2] = cos_argument
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -165,12 +172,40 @@ class MultiHeadAttention(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        
+        # Q,K,V through their linear layers
+        Q = self.query(query)  # (N, S, E)
+        K = self.key(key)      # (N, T, E)
+        V = self.value(value)    # (N, T, E)
+
+        # (N, L, E) -> (N, L, H, E/H) -> (N, H, L, E/H)
+        Q = Q.view(N, S, self.n_head, self.head_dim).transpose(1, 2)
+        K = K.view(N, T, self.n_head, self.head_dim).transpose(1, 2)
+        V = V.view(N, T, self.n_head, self.head_dim).transpose(1, 2)
+
+        # compute the attention scores
+        scores=torch.matmul(Q,K.transpose(-2,-1))/(self.head_dim**0.5)  # (N, H, S, T)
+        # use attn_mask
+        if attn_mask is not None:
+          # attn_mask (S, T)
+          scores=scores.masked_fill(attn_mask ==0,float('-inf'))
+        # compute softmax and dropout
+        softmax_scores=F.softmax(scores,dim=-1)
+        weight=self.attn_drop(softmax_scores)
+        # compute the sum and reshape
+        values=torch.matmul(weight,V)
+        output=values.transpose(1,2).contiguous().view(N,S,E)
+        # final proj
+        output=self.proj(output)
+        
+        
+        
+        
+        
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
         return output
-
-
+      
