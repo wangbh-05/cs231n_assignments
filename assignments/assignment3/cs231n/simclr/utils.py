@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from .contrastive_loss import *
 
-def train(model, data_loader, train_optimizer, epoch, epochs, batch_size=32, temperature=0.5, device='cuda'):
+def train(model, data_loader, train_optimizer, epoch, epochs, batch_size=32, temperature=0.5, device='cpu'):
     """Trains the model defined in ./model.py with one epoch.
     
     Inputs:
@@ -37,6 +37,9 @@ def train(model, data_loader, train_optimizer, epoch, epochs, batch_size=32, tem
         # Then compute the loss using simclr_loss_vectorized.                        #
         ##############################################################################
         
+        out_left=model(x_i)[1]
+        out_right=model(x_j)[1]
+        loss=simclr_loss_vectorized(out_left,out_right,temperature)
         
         ##############################################################################
         #                               END OF YOUR CODE                             #
@@ -53,7 +56,7 @@ def train(model, data_loader, train_optimizer, epoch, epochs, batch_size=32, tem
     return total_loss / total_num
 
 
-def train_val(model, data_loader, train_optimizer, epoch, epochs, device='cuda'):
+def train_val(model, data_loader, train_optimizer, epoch, epochs, device='cpu'):
     is_train = train_optimizer is not None
     model.train() if is_train else model.eval()
     loss_criterion = torch.nn.CrossEntropyLoss()
@@ -83,7 +86,7 @@ def train_val(model, data_loader, train_optimizer, epoch, epochs, device='cuda')
     return total_loss / total_num, total_correct_1 / total_num * 100, total_correct_5 / total_num * 100
 
 
-def test(model, memory_data_loader, test_data_loader, epoch, epochs, c, temperature=0.5, k=200, device='cuda'):
+def test(model, memory_data_loader, test_data_loader, epoch, epochs, c, temperature=0.5, k=200, device='cpu'):
     model.eval()
     total_top1, total_top5, total_num, feature_bank = 0.0, 0.0, 0, []
     with torch.no_grad():
