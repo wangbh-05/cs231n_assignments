@@ -38,14 +38,12 @@ class PositionalEncoding(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        # pos=torch.zeros(max_len, embed_dim//2)
-        # i=torch.zeros(max_len,embed_dim//2)
-        # argument=pos/(10000**(2*i/embed_dim))
-        # sin_argument=torch.sin(argument)
-        # cos_argument=torch.cos(argument)
-        # pe[:, :, 0::2] = sin_argument
-        # pe[:, :, 1::2] = cos_argument
-        pass
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.arange(0, embed_dim, 2, dtype=torch.float)
+        div_term = torch.exp(div_term * -(math.log(10000.0) / embed_dim))
+
+        pe[:, :, 0::2] = torch.sin(position * div_term)
+        pe[:, :, 1::2] = torch.cos(position * div_term)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -77,7 +75,10 @@ class PositionalEncoding(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # pe.shape=(1,max_len,embed_dim)
+
+        output = x + self.pe[:, :S, :]
+        output = self.dropout(output)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -197,11 +198,6 @@ class MultiHeadAttention(nn.Module):
         output=values.transpose(1,2).contiguous().view(N,S,E)
         # final proj
         output=self.proj(output)
-        
-        
-        
-        
-        
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
